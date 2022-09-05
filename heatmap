@@ -1,0 +1,7 @@
+#!/bin/bash
+
+input=( $(cat -) )
+
+for e in ${input[@]}; do
+	echo $e
+done
