@@ -1,7 +1,23 @@
 #!/bin/bash
 
+declare -i min
+declare -i max
+
 input=( $(cat -) )
 
-for e in ${input[@]}; do
-	echo $e
+# Find min and max input values.
+for val in "${input[@]}"; do
+
+	# Remove non-integer values.
+	if [[ ! $val =~ ^-?[0-9]+$ ]]; then
+		input=( "${input[@]/$val}" )
+		continue
+	fi
+
+	if [[ ! -v min ]] || (( $val < $min )); then
+		min=$val
+	fi
+	if [[ ! -v max ]] || (( $val > $max )); then
+		max=$val
+	fi
 done
