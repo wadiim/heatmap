@@ -3,6 +3,15 @@
 declare -i min
 declare -i max
 
+# Default colors (values are in sixel format):
+colors=(
+	[0]="18;20;23"
+	[1]="6;28;16"
+	[2]="0;43;20"
+	[3]="15;65;26"
+	[4]="22;83;33"
+)
+
 input=( $(cat -) )
 
 # Find min and max input values.
@@ -20,4 +29,20 @@ for val in "${input[@]}"; do
 	if [[ ! -v max ]] || (( $val > $max )); then
 		max=$val
 	fi
+done
+
+# Divide $1 by $2 and round the result to the nearest integer.
+divide() {
+	numerator=$1
+	denominator=$2
+
+	echo "$(( (numerator + denominator/2) / denominator ))"
+}
+
+# Map input values to color codes.
+color_codes=( )
+range=$(( max - min ))
+max_color_code=$(( ${#colors[@]} - 1 ))
+for val in "${input[@]}"; do
+	color_codes+=( "$( divide $(( (val - min)*max_color_code )) range )" )
 done
