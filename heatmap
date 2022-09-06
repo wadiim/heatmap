@@ -44,5 +44,8 @@ cells=( )
 range=$(( max - min ))
 max_color_code=$(( ${#colors[@]} - 1 ))
 for val in "${input[@]}"; do
+	if [[ $val == "" ]]; then
+		continue
+	fi
 	cells+=( "$( divide $(( (val - min)*max_color_code )) range )" )
 done
