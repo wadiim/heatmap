@@ -32,7 +32,7 @@ for val in "${input[@]}"; do
 done
 
 # Divide $1 by $2 and round the result to the nearest integer.
-divide() {
+ndiv() {
 	numerator=$1
 	denominator=$2
 
@@ -47,5 +47,5 @@ for val in "${input[@]}"; do
 	if [[ $val == "" ]]; then
 		continue
 	fi
-	cells+=( "$( divide $(( (val - min)*max_color_code )) range )" )
+	cells+=( "$( ndiv $(( (val - min)*max_color_code )) range )" )
 done
