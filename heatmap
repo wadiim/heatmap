@@ -40,9 +40,9 @@ divide() {
 }
 
 # Map input values to color codes.
-color_codes=( )
+cells=( )
 range=$(( max - min ))
 max_color_code=$(( ${#colors[@]} - 1 ))
 for val in "${input[@]}"; do
-	color_codes+=( "$( divide $(( (val - min)*max_color_code )) range )" )
+	cells+=( "$( divide $(( (val - min)*max_color_code )) range )" )
 done
