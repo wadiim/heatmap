@@ -39,6 +39,14 @@ ndiv() {
 	echo "$(( (numerator + denominator/2) / denominator ))"
 }
 
+# Divide $1 by $2 and round the result up.
+udiv() {
+	numerator=$1
+	denominator=$2
+
+	echo "$(( (numerator + denominator-1) / denominator ))"
+}
+
 # Map input values to color codes.
 cells=( )
 range=$(( max - min ))
@@ -48,4 +56,35 @@ for val in "${input[@]}"; do
 		continue
 	fi
 	cells+=( "$( ndiv $(( (val - min)*max_color_code )) range )" )
+done
+
+pixmap=( )
+cell_size=2
+max_num_of_cols=8
+
+declare -i num_of_cols
+
+if (( ${#cells[@]} < max_num_of_cols )); then
+	num_of_cols="${#cells[@]}"
+else
+	num_of_cols="$max_num_of_cols"
+fi
+
+num_of_rows=$( udiv ${#cells[@]} $num_of_cols )
+
+# Generate pixmap
+for row in $( seq 0 $(( num_of_rows - 1 )) ); do
+	for col in $( seq 0 $(( num_of_cols - 1 )) ); do
+		cell_idx=$(( row*num_of_cols + col ))
+		for x in $( seq 0 $(( cell_size - 1 )) ); do
+			for y in $( seq 0 $(( cell_size - 1 )) ); do
+				pixmap_idx=$(( row*cell_size*cell_size*num_of_cols + col*cell_size + x + y*cell_size*num_of_cols ))
+				if (( cell_idx >= ${#cells[@]} )); then
+					pixmap[$pixmap_idx]=$(( -1 ))
+				else
+					pixmap[$pixmap_idx]="$(( ${cells[$cell_idx]} ))"
+				fi
+			done
+		done
+	done
 done
