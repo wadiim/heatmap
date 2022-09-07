@@ -60,6 +60,7 @@ done
 
 pixmap=( )
 cell_size=2
+margin_size=1
 max_num_of_cols=8
 
 declare -i num_of_cols
@@ -71,29 +72,45 @@ else
 fi
 
 num_of_rows=$( udiv ${#cells[@]} $num_of_cols )
+width="$(( cell_size*num_of_cols + margin_size*(num_of_cols - 1) ))"
+height="$(( cell_size*num_of_rows + margin_size*(num_of_rows - 1) ))"
 
 # Generate pixmap
 for row in $( seq 0 $(( num_of_rows - 1 )) ); do
 	for col in $( seq 0 $(( num_of_cols - 1 )) ); do
 		cell_idx=$(( row*num_of_cols + col ))
-		for x in $( seq 0 $(( cell_size - 1 )) ); do
-			for y in $( seq 0 $(( cell_size - 1 )) ); do
-				pixmap_idx=$(( row*cell_size*cell_size*num_of_cols + col*cell_size + x + y*cell_size*num_of_cols ))
-				if (( cell_idx >= ${#cells[@]} )); then
-					pixmap[$pixmap_idx]=$(( -1 ))
+		for y in $( seq 0 $(( cell_size - 1)) ); do
+			for x in $( seq 0 $(( (cell_size - 1) + margin_size )) ); do
+				pixmap_idx=$(( row*(cell_size + margin_size)*width + col*(cell_size + margin_size) + x + y*width ))
+				if (( x > (cell_size - 1) )); then
+					# Add vertical margin
+					if (( col < (num_of_cols - 1) )); then
+						pixmap[$pixmap_idx]=$(( -1 ))
+					else
+						continue
+					fi
 				else
-					pixmap[$pixmap_idx]="$(( ${cells[$cell_idx]} ))"
+					if (( cell_idx >= ${#cells[@]} )); then
+						pixmap[$pixmap_idx]=$(( -1 ))
+					else
+						pixmap[$pixmap_idx]="$(( ${cells[$cell_idx]} ))"
+					fi
 				fi
 			done
 		done
 	done
+	# Add horizontal margin
+	if (( row < (num_of_rows - 1) )); then
+		for i in $( seq 0 $(( width*margin_size - 1 )) ); do
+			pixmap+=( "-1" )
+		done
+	fi
 done
 
-width="$(( cell_size*num_of_cols ))"
-
 # Add bottom padding if necessary to make the pixmap height a multiple of 6.
-while (( ( ${#pixmap[@]} / width ) % 6 != 0 )); do
+while (( height % 6 != 0 )); do
 	for i in $( seq 0 $(( width - 1 )) ); do
 		pixmap+=( "-1" )
 	done
+	height=$(( height+=1 ))
 done
