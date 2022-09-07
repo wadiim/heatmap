@@ -88,3 +88,12 @@ for row in $( seq 0 $(( num_of_rows - 1 )) ); do
 		done
 	done
 done
+
+width="$(( cell_size*num_of_cols ))"
+
+# Add bottom padding if necessary to make the pixmap height a multiple of 6.
+while (( ( ${#pixmap[@]} / width ) % 6 != 0 )); do
+	for i in $( seq 0 $(( width - 1 )) ); do
+		pixmap+=( "-1" )
+	done
+done
