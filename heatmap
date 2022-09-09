@@ -161,6 +161,7 @@ main() {
         map_input_to_cells
         generate_pixmap
 	pixmap_to_sixel
+	echo -e "$heatmap"
 }
 
 main
