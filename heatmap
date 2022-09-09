@@ -10,9 +10,9 @@ declare -ga colors=(
         [3]="15;65;26"
         [4]="22;83;33"
 )
-declare -gi cell_size=2   # Cell size in pixels.
-declare -gi margin_size=1 # Margin size in pixels.
-declare -gi max_cols=8    # Max number of columns.
+declare -gi cell_size=16  # Cell size in pixels.
+declare -gi margin_size=4 # Margin size in pixels.
+declare -gi max_cols=32   # Max number of columns.
 
 # GLOBALS
 
