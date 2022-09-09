@@ -38,7 +38,13 @@ udiv() {
 	echo "$((($1 + ($2 - 1)) / $2))"
 }
 
+########################################
 # Find min and max input values.
+# Globals:
+#	input, min, max
+# Arguments:
+#	None
+########################################
 find_min_max() {
         for val in "${input[@]}"; do
                 # Remove non-integer values.
@@ -47,26 +53,45 @@ find_min_max() {
                         continue
                 fi
 
-                if [[ ! -v min ]] || ((val < min)); then
-                        min=$val
-                fi
-                if [[ ! -v max ]] || ((val > max)); then
-                        max=$val
-                fi
+                [[ ! -v min ]] || ((val < min)) && min=$val
+                [[ ! -v max ]] || ((val > max)) && max=$val
         done
 }
 
-# Map input values to color codes and fill the $cells array.
+########################################
+# Map a value to a color code.
+# Globals:
+#	colors, min, max
+# Arguments:
+#	Value to map.
+# Outputs:
+#	A color code corresponding to the given value.
+########################################
+map_value_to_color_code() {
+	echo "$(ndiv $((($1 - min) * (${#colors[@]} - 1))) $((max - min)))"
+}
+
+########################################
+# Map input values to color codes.
+# Globals:
+#	input, cells
+# Arguments:
+#	None
+########################################
 map_input_to_cells() {
         for val in "${input[@]}"; do
-                if [[ $val == "" ]]; then
-                        continue
-                fi
-                cells+=("$(ndiv $(((val - min) * (${#colors[@]} - 1))) $((max - min)))")
+                [[ $val == "" ]] && continue
+		cells+=($(map_value_to_color_code $val))
         done
 }
 
+########################################
 # Convert cells to pixmap.
+# Globals:
+#	cells, pixmap, width, height, cell_size, margin_size, max_cols
+# Arguments:
+#	None
+########################################
 generate_pixmap() {
         local num_of_cols
 	local num_of_rows
@@ -122,17 +147,45 @@ generate_pixmap() {
         done
 }
 
+########################################
+# Convert a binary number to an ascii character.
+# Arguments:
+#	A binary number as string.
+# Outputs:
+#	The corresponding ascii character.
+########################################
+binary_to_ascii() {
+	echo "$(printf "\x$(printf '%x' $1)")"
+}
+
+########################################
+# Initialize the binary_to_sixel_map array with all possible 6-digit binary
+# numbers and the corresponding sixel characters.
+# Globals:
+#	binary_to_sixel_map
+# Arguments:
+#	None
+########################################
 init_binary_to_sixel_map() {
 	for bin in {0..1}{0..1}{0..1}{0..1}{0..1}{0..1}; do
-		binary_to_sixel_map["$bin"]="$(printf "\x$(printf '%x' $((2#$bin + 2#111111)))")"
+		binary_to_sixel_map["$bin"]="
+			$(binary_to_ascii $((2#$bin + 2#111111)))
+		"
 	done
 }
 
+########################################
+# Convert the pixmap to a sixel sequence defining the heatmap.
+# Globals:
+#	pixmap, heatmap, colors, width
+# Arguments:
+#	None
+########################################
 pixmap_to_sixel() {
 	local begin_idx=0 # Index of the top-left pixel of a six pixel high
 	                  # row.
 
-	heatmap+='Pq'
+	heatmap+='Pq'   # Enter sixel mode.
 
 	# Define color pallete
 	for color_idx in "${!colors[@]}"; do
@@ -162,7 +215,7 @@ pixmap_to_sixel() {
 		begin_idx=$((begin_idx + 6*width))
 	done
 
-	heatmap+='\'
+	heatmap+='\' # Leave sixel mode.
 }
 
 main() {
