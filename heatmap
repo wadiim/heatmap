@@ -22,6 +22,7 @@ declare -ga cells        # Color codes of individual cells.
 declare -ga pixmap       # Color codes of individual pixels.
                          # Values of -1 represents background color.
 declare -gi width height # Width end height of the output heatmap in pixels.
+declare -g  heatmap      # Sixel sequence defining the heatmap.
 
 # Divide $1 by $2 and round the result to the nearest integer.
 ndiv() {
@@ -117,11 +118,49 @@ generate_pixmap() {
         done
 }
 
+pixmap_to_sixel() {
+	local begin_idx=0 # Index of the top-left pixel of a six pixel high
+	                  # row.
+
+	heatmap+='Pq'
+
+	# Define color pallete
+	for color_idx in "${!colors[@]}"; do
+		heatmap+="#$color_idx;2;${colors[$color_idx]}"
+	done
+
+	while ((begin_idx < ${#pixmap[@]})); do
+		for color_idx in "${!colors[@]}"; do
+			heatmap+="#$color_idx"
+			for col_idx in $(seq $begin_idx $((begin_idx + (width - 1)))); do
+				local binary=""
+				for idx in $(seq "$col_idx" $width $((col_idx + 5*width))); do
+					if ((pixmap[idx] == color_idx)); then
+						binary="1$binary"
+					else
+						binary="0$binary"
+					fi
+				done
+				heatmap+="$(printf "\x$(printf '%x' $((2#$binary + 2#111111)))")"
+			done
+			if ((color_idx != ${#colors[@]} - 1)); then
+				heatmap+='$'
+			else
+				heatmap+='$-'
+			fi
+		done
+		begin_idx=$((begin_idx + 6*width))
+	done
+
+	heatmap+='\'
+}
+
 main() {
         input=($(cat -))
         find_min_max
         map_input_to_cells
         generate_pixmap
+	pixmap_to_sixel
 }
 
 main
