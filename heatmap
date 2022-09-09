@@ -16,13 +16,17 @@ declare -gi max_cols=32   # Max number of columns.
 
 # GLOBALS
 
-declare -ga input        # Input values.
-declare -gi min max      # Min/max input values.
-declare -ga cells        # Color codes of individual cells.
-declare -ga pixmap       # Color codes of individual pixels.
-                         # Values of -1 represents background color.
-declare -gi width height # Width end height of the output heatmap in pixels.
-declare -g  heatmap      # Sixel sequence defining the heatmap.
+declare -ga input               # Input values.
+declare -gi min max             # Min/max input values.
+declare -ga cells               # Color codes of individual cells.
+declare -ga pixmap              # Color codes of individual pixels.
+                                # Values of -1 represents background color.
+declare -gi width height        # Width end height of the output heatmap in
+                                # pixels.
+declare -g  heatmap             # Sixel sequence defining the heatmap.
+declare -gA binary_to_sixel_map # Mapping from binary numbers (stored as
+                                # strings) to sixel characters. Needed for
+				# performance reasons.
 
 # Divide $1 by $2 and round the result to the nearest integer.
 ndiv() {
@@ -118,6 +122,12 @@ generate_pixmap() {
         done
 }
 
+init_binary_to_sixel_map() {
+	for bin in {0..1}{0..1}{0..1}{0..1}{0..1}{0..1}; do
+		binary_to_sixel_map["$bin"]="$(printf "\x$(printf '%x' $((2#$bin + 2#111111)))")"
+	done
+}
+
 pixmap_to_sixel() {
 	local begin_idx=0 # Index of the top-left pixel of a six pixel high
 	                  # row.
@@ -141,7 +151,7 @@ pixmap_to_sixel() {
 						binary="0$binary"
 					fi
 				done
-				heatmap+="$(printf "\x$(printf '%x' $((2#$binary + 2#111111)))")"
+				heatmap+="${binary_to_sixel_map[$binary]}"
 			done
 			if ((color_idx != ${#colors[@]} - 1)); then
 				heatmap+='$'
@@ -160,6 +170,7 @@ main() {
         find_min_max
         map_input_to_cells
         generate_pixmap
+	init_binary_to_sixel_map
 	pixmap_to_sixel
 	echo -e "$heatmap"
 }
