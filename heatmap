@@ -197,8 +197,9 @@ pixmap_to_sixel() {
 	local color_idx=0
 	local binary
 
+	heatmap+="#$color_idx"
+
 	while ((pixel_idxs[0] < ${#pixmap[@]})); do
-		heatmap+="#$color_idx" # Switch to the next color.
 		binary=""
 
 		# Convert six pixmap values to a sixel character.
@@ -219,7 +220,7 @@ pixmap_to_sixel() {
 				done
 				((last_idx = pixel_idxs[0] + (width - 1)))
 				color_idx=0
-				heatmap+='$-'
+				heatmap+="#$color_idx\$-"
 			else
 				# Move to the beginning of the
 				# current line.
@@ -228,7 +229,7 @@ pixmap_to_sixel() {
 					((pixel_idxs[i] -= (width - 1)))
 				done
 				((color_idx += 1))
-				heatmap+='$'
+				heatmap+="#$color_idx\$"
 			fi
 		else
 			# Move to the next column.
