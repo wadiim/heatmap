@@ -173,9 +173,7 @@ binary_to_ascii() {
 ########################################
 init_binary_to_sixel_map() {
 	for bin in {0..1}{0..1}{0..1}{0..1}{0..1}{0..1}; do
-		binary_to_sixel_map["$bin"]="
-			$(binary_to_ascii $((2#$bin + 2#111111)))
-		"
+		binary_to_sixel_map["$bin"]="$(binary_to_ascii $((2#$bin + 2#111111)))"
 	done
 }
 
