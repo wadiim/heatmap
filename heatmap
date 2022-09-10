@@ -187,7 +187,7 @@ pixmap_to_sixel() {
 
 	heatmap+='Pq'   # Enter sixel mode.
 
-	# Define color pallete
+	# Define color palette
 	for color_idx in "${!colors[@]}"; do
 		heatmap+="#$color_idx;2;${colors[$color_idx]}"
 	done
