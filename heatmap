@@ -187,37 +187,58 @@ init_binary_to_sixel_map() {
 #	None
 ########################################
 pixmap_to_sixel() {
-	local begin_idx=0 # Index of the top-left pixel of a six pixel high
-	                  # row.
-
-	heatmap+='Pq'   # Enter sixel mode.
+	heatmap+='Pq' # Enter sixel mode.
 
 	# Define color palette
 	for color_idx in "${!colors[@]}"; do
 		heatmap+="#$color_idx;2;${colors[$color_idx]}"
 	done
 
-	while ((begin_idx < ${#pixmap[@]})); do
-		for color_idx in "${!colors[@]}"; do
-			heatmap+="#$color_idx"
-			for col_idx in $(seq $begin_idx $((begin_idx + (width - 1)))); do
-				local binary=""
-				for idx in $(seq "$col_idx" $width $((col_idx + 5*width))); do
-					if ((pixmap[idx] == color_idx)); then
-						binary="1$binary"
-					else
-						binary="0$binary"
-					fi
-				done
-				heatmap+="${binary_to_sixel_map[$binary]}"
-			done
-			if ((color_idx != ${#colors[@]} - 1)); then
-				heatmap+='$'
-			else
-				heatmap+='$-'
-			fi
+	local pixel_idxs=($(seq 0 $width $((5*width))))
+	local last_idx=$((pixel_idx[0] + (width - 1)))
+	local color_idx=0
+	local binary
+
+	while ((pixel_idxs[0] < ${#pixmap[@]})); do
+		heatmap+="#$color_idx" # Switch to the next color.
+		binary=""
+
+		# Convert six pixmap values to a sixel character.
+		for idx in "${pixel_idxs[@]}"; do
+			binary="$((pixmap[idx] == color_idx))$binary"
 		done
-		begin_idx=$((begin_idx + 6*width))
+
+		heatmap+="${binary_to_sixel_map[$binary]}"
+
+		if ((pixel_idxs[0] > 0)) &&
+		   ((pixel_idxs[0] == last_idx)); then
+			if ((color_idx == ${#colors[@]} - 1)); then
+				# Move to the next line.
+
+				((pixel_idxs[0] += 5*width + 1))
+				for i in $(seq 1 $((${#pixel_idxs[@]} - 1))); do
+					((pixel_idxs[i] = pixel_idxs[i-1] + width))
+				done
+				((last_idx = pixel_idxs[0] + (width - 1)))
+				color_idx=0
+				heatmap+='$-'
+			else
+				# Move to the beginning of the
+				# current line.
+
+				for i in "${!pixel_idxs[@]}"; do
+					((pixel_idxs[i] -= (width - 1)))
+				done
+				((color_idx += 1))
+				heatmap+='$'
+			fi
+		else
+			# Move to the next column.
+
+			for i in ${!pixel_idxs[@]}; do
+				((pixel_idxs[i] += 1))
+			done
+		fi
 	done
 
 	heatmap+='\' # Leave sixel mode.
