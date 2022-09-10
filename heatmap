@@ -225,7 +225,7 @@ main() {
         generate_pixmap
 	init_binary_to_sixel_map
 	pixmap_to_sixel
-	echo -e "$heatmap"
+	echo -ne "$heatmap"
 }
 
 main
