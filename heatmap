@@ -1,5 +1,10 @@
 #!/bin/bash
 
+# A heatmap generator for sixel-capable terminals.
+# It reads integers from stdin and generates a heatmap using sixel
+# graphics, where each cell's color represents a corresponding
+# input value.
+
 # DEFAULTS
 
 # Color lookup table (values are in sixel format):
