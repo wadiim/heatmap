@@ -243,6 +243,23 @@ pixmap_to_sixel() {
 	heatmap+='\' # Leave sixel mode.
 }
 
+########################################
+# Compress the output sixel sequence.
+# Globals:
+#	heatmap, width
+# Arguments:
+#	None
+########################################
+compress_output() {
+	for i in $(seq $width -1 2); do
+		heatmap="$(echo "$heatmap" | sed -r 's/([@A-Za-z~^_`])\1{'$i'}/!'$((i+1))'\1/g')"
+		for s in '?' '[' '\' ']' '{' '|' '}'; do
+			heatmap="$(echo "$heatmap" | sed -r 's/(\'$s')\'$s'{'$i'}/!'$((i+1))'\'$s'/g')"
+		done
+	done
+	heatmap="$(echo "$heatmap" | sed -r 's/![0-9]+\?(#[0-9]+\$)/\1/g')"
+}
+
 main() {
         input=($(cat -))
         find_min_max
@@ -250,6 +267,7 @@ main() {
         generate_pixmap
 	init_binary_to_sixel_map
 	pixmap_to_sixel
+	compress_output
 	echo -ne "$heatmap"
 }
 
