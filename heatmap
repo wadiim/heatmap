@@ -18,6 +18,11 @@ declare -ga colors=(
 declare -gi cell_size=16  # Cell size in pixels.
 declare -gi margin_size=4 # Margin size in pixels.
 declare -gi max_cols=32   # Max number of columns.
+declare -gi compress=0    # A flag that specify whether or not
+                          # to compress the output data. A value
+			  # of 0 indicates that the data should be
+			  # compressed, and any other value
+			  # indicates that it should not.
 
 # GLOBALS
 
@@ -260,15 +265,65 @@ compress_output() {
 	heatmap="$(echo "$heatmap" | sed -r 's/![0-9]+\?(#[0-9]+\$)/\1/g')"
 }
 
+show_help() {
+	cat << EOF
+Usage: $0 [-c NUM] [-m NUM] [-w NUM] [-o] [-h]
+
+-c NUM
+	Set the size of each cell to NUM pixels.
+-m NUM
+	Set the size of gaps between cells to NUM pixels.
+-w NUM
+	Set the maximal number of columns to NUM.
+-o
+	Enable the output data compression.
+-h
+	Show help message and exit.
+EOF
+}
+
+########################################
+# Parse command-line arguments.
+# Globals:
+#	cell_size, margin_size, max_cols, compress
+# Arguments:
+#	@
+########################################
+parse_args() {
+	while getopts "c:m:w:oh" opt; do
+		case "$opt" in
+			c)
+				cell_size=$((OPTARG))
+				;;
+			m)
+				margin_size=$((OPTARG))
+				;;
+			w)
+				max_cols=$((OPTARG))
+				;;
+			o)
+				compress=1
+				;;
+			h)
+				show_help
+				exit 0
+				;;
+		esac
+	done
+}
+
 main() {
+	parse_args "$@"
         input=($(cat -))
         find_min_max
         map_input_to_cells
         generate_pixmap
 	init_binary_to_sixel_map
 	pixmap_to_sixel
-	compress_output
+	if ((compress != 0)); then
+		compress_output
+	fi
 	echo -ne "$heatmap"
 }
 
-main
+main "$@"
