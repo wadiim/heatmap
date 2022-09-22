@@ -32,11 +32,18 @@ declare -ga cells               # Color codes of individual cells.
 declare -ga pixmap              # Color codes of individual pixels.
                                 # Values of -1 represents background color.
 declare -gi width height        # Width end height of the output heatmap in
+declare -gi num_of_cols         # Number of columns of the output
+				# heatmap.
+declare -gi num_of_rows         # Number of rows of the output
+				# heatmap.
+
                                 # pixels.
 declare -g  heatmap             # Sixel sequence defining the heatmap.
 declare -gA binary_to_sixel_map # Mapping from binary numbers (stored as
                                 # strings) to sixel characters. Needed for
 				# performance reasons.
+declare -ga base_pixmap_idxs    # A pixmap indexes corresponding
+				# to the first cell.
 
 # Divide $1 by $2 and round the result to the nearest integer.
 ndiv() {
@@ -96,16 +103,13 @@ map_input_to_cells() {
 }
 
 ########################################
-# Convert cells to pixmap.
+# Calculate the heatmap dimensions.
 # Globals:
-#	cells, pixmap, width, height, cell_size, margin_size, max_cols
+#	num_of_cols, num_rows, width, height
 # Arguments:
 #	None
 ########################################
-generate_pixmap() {
-        local num_of_cols
-	local num_of_rows
-
+calculate_dimensions() {
         if ((${#cells[@]} < max_cols)); then
                 num_of_cols="${#cells[@]}"
         else
@@ -115,37 +119,60 @@ generate_pixmap() {
 
         width="$((cell_size * num_of_cols + margin_size * (num_of_cols - 1)))"
         height="$((cell_size * num_of_rows + margin_size * (num_of_rows - 1)))"
+}
 
-        for row in $(seq 0 $((num_of_rows - 1))); do
-                for col in $(seq 0 $((num_of_cols - 1))); do
-                        cell_idx=$((row * num_of_cols + col))
-                        for y in $(seq 0 $((cell_size - 1))); do
-                                for x in $(seq 0 $(((cell_size - 1) + margin_size))); do
-					pixmap_idx=$((row * (cell_size + margin_size) * width + col * (cell_size + margin_size) + x + y * width))
-                                        if ((x > (cell_size - 1))); then
-                                                # Add vertical margin
-                                                if ((col < (num_of_cols - 1))); then
-                                                        pixmap[$pixmap_idx]=$((-1))
-                                                else
-                                                        continue
-                                                fi
-                                        else
-                                                if ((cell_idx >= ${#cells[@]})); then
-                                                        pixmap[$pixmap_idx]=$((-1))
-                                                else
-                                                        pixmap[$pixmap_idx]="$((${cells[$cell_idx]}))"
-                                                fi
-                                        fi
-                                done
-                        done
-                done
-                # Add horizontal margin
-                if ((row < (num_of_rows - 1))); then
-                        for i in $(seq 0 $((width * margin_size - 1))); do
-                                pixmap+=("-1")
-                        done
-                fi
-        done
+########################################
+# Initialize the base_pixmap_idxs global variable.
+# Globals:
+#	base_pixmap_idxs, cell_size, width
+# Arguments:
+#	None
+########################################
+init_base_pixmap_idxs() {
+	local idx=0
+	for i in $(seq 0 $((cell_size*cell_size - 1))); do
+		base_pixmap_idxs+=($idx)
+		((idx+=1))
+		if (((i+1) % cell_size == 0)); then
+			idx=$(((idx - cell_size) + width))
+		fi
+	done
+}
+
+########################################
+# Repeat the given character specified number of times.
+# Arguments:
+#	A character to repeat, number of repeats.
+########################################
+repeat_char() {
+	local ret="$1"
+	for ((i=0; i<($2 - 1); i+=1)); do
+		ret+=" $1"
+	done
+	echo "$ret"
+}
+
+########################################
+# Convert cells to pixmap.
+# Globals:
+#	cells, pixmap, width, height, cell_size, margin_size, max_cols
+# Arguments:
+#	None
+########################################
+generate_pixmap() {
+	local pixmap_idx=0
+	pixmap=( $(repeat_char '-1' $((width*height))) )
+	for cell_idx in "${!cells[@]}"; do
+		for i in "${base_pixmap_idxs[@]}"; do
+			pixmap[$((pixmap_idx + i))]="$((${cells[$cell_idx]}))"
+		done
+		((pixmap_idx += cell_size))
+		if ((pixmap_idx % width == 0)); then
+			((pixmap_idx += (cell_size + margin_size - 1)*width))
+		else
+			((pixmap_idx += margin_size))
+		fi
+	done
 
         # Add bottom padding if necessary to make the pixmap height a multiple
         # of 6.
@@ -317,6 +344,8 @@ main() {
         input=($(cat -))
         find_min_max
         map_input_to_cells
+	calculate_dimensions
+	init_base_pixmap_idxs
         generate_pixmap
 	init_binary_to_sixel_map
 	pixmap_to_sixel
