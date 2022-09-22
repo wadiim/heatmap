@@ -342,6 +342,7 @@ parse_args() {
 main() {
 	parse_args "$@"
         input=($(cat -))
+	((${#input[@]} <= 0)) && exit 0
         find_min_max
         map_input_to_cells
 	calculate_dimensions
