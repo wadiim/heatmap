@@ -85,7 +85,11 @@ find_min_max() {
 #	A color code corresponding to the given value.
 ########################################
 map_value_to_color_code() {
-	echo "$(ndiv $((($1 - min) * (${#colors[@]} - 1))) $((max - min)))"
+	if ((min == max)); then
+		echo "0"
+	else
+		echo "$(ndiv $((($1 - min) * (${#colors[@]} - 1))) $((max - min)))"
+	fi
 }
 
 ########################################
